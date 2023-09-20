@@ -6,5 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface AtividadeRepository extends JpaRepository<Atividade, Long> {
-    // Você pode adicionar métodos de consulta personalizados aqui, se necessário
+
 }

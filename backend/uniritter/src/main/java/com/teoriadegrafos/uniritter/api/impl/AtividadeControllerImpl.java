@@ -36,6 +36,7 @@ public class AtividadeControllerImpl implements AtividadeController {
         return ResponseEntity.ok().body(page);
     }
 
+    @Override
     @GetMapping("/buscar/{id}")
     public ResponseEntity<AtividadeDTO> consultarAtividade(@PathVariable Long id) {
         Optional<AtividadeDTO> atividadeDTO = atividadeService.consultarAtividade(id);
@@ -48,6 +49,7 @@ public class AtividadeControllerImpl implements AtividadeController {
         }
     }
 
+    @Override
     @PostMapping("/criar")
     public ResponseEntity<AtividadeDTO> criarAtividade(@RequestBody AtividadeDTO atividadeDTO) {
 
@@ -59,6 +61,7 @@ public class AtividadeControllerImpl implements AtividadeController {
         return ResponseEntity.created(uri).body(atividadeDTO);
     }
 
+    @Override
     @PutMapping("/atualizar/{id}")
     public ResponseEntity<AtividadeDTO> atualizarAtividade(@PathVariable Long id, @RequestBody AtividadeDTO atividadeDTO) {
 
@@ -68,6 +71,7 @@ public class AtividadeControllerImpl implements AtividadeController {
         return ResponseEntity.ok().body(atividadeDTO);
     }
 
+    @Override
     @DeleteMapping("/remover/{id}")
     public ResponseEntity<Void> removerAtividade(@PathVariable Long id) {
 

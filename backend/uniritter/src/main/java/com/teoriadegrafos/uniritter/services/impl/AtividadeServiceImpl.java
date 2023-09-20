@@ -13,6 +13,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -41,12 +43,32 @@ public class AtividadeServiceImpl implements AtividadeService {
         try {
             Atividade entity = new Atividade();
             copyDtoToEntity(atividadeDTO, entity);
+
+            // Se a lista de dependências não for nula, processe as dependências
+            if (atividadeDTO.dependencias() != null) {
+                // Certifique-se de que as dependências existem no banco de dados
+                List<Long> dependenciasIds = atividadeDTO.dependencias();
+
+                // Converta a lista de IDs em uma lista de entidades
+                List<Atividade> dependencias = atividadeRepository.findAllById(dependenciasIds);
+
+                // Crie uma lista de IDs a partir das entidades
+                List<Long> dependenciasIdsFromEntities = dependencias.stream()
+                        .map(Atividade::getId)
+                        .toList(); // Alterado de collect(Collectors.toList()) para toList()
+
+                // Associe as dependências à atividade
+                entity.setDependencias(dependenciasIdsFromEntities);
+            }
+
             entity = atividadeRepository.save(entity);
             return new AtividadeDTO(entity);
         } catch (Exception e) {
-            throw new AtividadeNotFoundException("Erro ao inserir pessoa no banco de dados");
+            throw new AtividadeNotFoundException("Erro ao inserir atividade no banco de dados");
         }
     }
+
+
 
     @Override
     @Transactional
@@ -65,8 +87,32 @@ public class AtividadeServiceImpl implements AtividadeService {
             Optional<Atividade> optionalEntity = atividadeRepository.findById(id);
             if (optionalEntity.isPresent()) {
                 Atividade entity = optionalEntity.get();
+
+                // Atualize os campos simples da atividade (nome, identificador, duracaoEstimada)
                 copyDtoToEntity(atividadeDTO, entity);
+
+                // Em seguida, atualize as dependências se elas estiverem presentes no DTO
+                if (atividadeDTO.dependencias() != null) {
+                    // Certifique-se de que as dependências existem no banco de dados
+                    List<Long> dependenciasIds = atividadeDTO.dependencias();
+                    List<Atividade> dependencias = atividadeRepository.findAllById(dependenciasIds);
+
+                    // Converta a lista de dependências em uma lista de IDs
+                    List<Long> dependenciasIdsFromEntities = dependencias.stream()
+                            .map(Atividade::getId)
+                            .toList(); // Alterado de collect(Collectors.toList()) para toList()
+
+                    // Associe as dependências à atividade
+                    entity.setDependencias(dependenciasIdsFromEntities);
+                } else {
+                    // Se não houver dependências no DTO, defina a lista de dependências como vazia
+                    entity.setDependencias(Collections.emptyList());
+                }
+
+                // Salve a atividade atualizada no banco de dados
                 entity = atividadeRepository.save(entity);
+
+                // Retorne a versão atualizada da atividade como AtividadeDTO
                 return new AtividadeDTO(entity);
             } else {
                 throw new AtividadeNotFoundException(ID_NOT_FOUND_MESSAGE + id);
@@ -75,6 +121,9 @@ public class AtividadeServiceImpl implements AtividadeService {
             throw new ResourceNotFoundException(ID_NOT_FOUND_MESSAGE + id);
         }
     }
+
+
+
 
     @Override
     public void removerAtividade(Long id) {

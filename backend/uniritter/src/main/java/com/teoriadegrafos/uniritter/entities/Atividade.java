@@ -1,10 +1,9 @@
 package com.teoriadegrafos.uniritter.entities;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
 import lombok.*;
+
+import java.util.List;
 
 
 @Entity
@@ -20,4 +19,7 @@ public class Atividade {
     private String nome;
     private String identificador;
     private int duracaoEstimada;
+
+    @ElementCollection
+    private List<Long> dependencias;
 }
