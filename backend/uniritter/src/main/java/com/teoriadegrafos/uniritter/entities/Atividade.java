@@ -1,31 +1,22 @@
 package com.teoriadegrafos.uniritter.entities;
 
-import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 
-@Entity
 @NoArgsConstructor
 @AllArgsConstructor
 @Getter
 @Setter
 @ToString
+@Builder
 public class Atividade {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Integer id;
     private String nome;
-    private String identificador;
-    private LocalDate dataDeInicioDaAtividade;
-    private int duracaoEstimada;
-    private LocalDate dataDeFimDaAtividade; // Add this field for end date
-
-    @ElementCollection(fetch = FetchType.EAGER)
-    private List<Long> dependencias;
-
-    private LocalDate dataDeInicioMaisCedo; // Tempo de Início Mais Cedo (ES)
-    private LocalDate dataDeTerminoMaisCedo; // Tempo de Término Mais Cedo (EF)
+    private Integer diasDuracaoAtividade;
+    private StatusEnum status;
+    private List<Atividade> atividadesDependentes = new ArrayList<>();
+    private List<Atividade> atividadesLiberadas = new ArrayList<>();
 }
