@@ -13,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -43,6 +44,14 @@ public class AtividadeServiceImpl implements AtividadeService {
         try {
             Atividade entity = new Atividade();
             copyDtoToEntity(atividadeDTO, entity);
+
+            // Set the start date
+            entity.setDataDeInicioDaAtividade(atividadeDTO.dataDeInicioDaAtividade());
+
+            // Calculate the end date based on the start date and estimated duration
+            LocalDate startDate = entity.getDataDeInicioDaAtividade();
+            LocalDate endDate = startDate.plusDays(entity.getDuracaoEstimada());
+            entity.setDataDeFimDaAtividade(endDate);
 
             // Se a lista de dependências não for nula, processe as dependências
             if (atividadeDTO.dependencias() != null) {
@@ -88,8 +97,18 @@ public class AtividadeServiceImpl implements AtividadeService {
             if (optionalEntity.isPresent()) {
                 Atividade entity = optionalEntity.get();
 
-                // Atualize os campos simples da atividade (nome, identificador, duracaoEstimada)
+                // Atualize os campos simples da atividade (nome, identificador, duracaoEstimada, dataDeInicioDaAtividade)
                 copyDtoToEntity(atividadeDTO, entity);
+
+                // Set the start date (if provided)
+                if (atividadeDTO.dataDeInicioDaAtividade() != null) {
+                    entity.setDataDeInicioDaAtividade(atividadeDTO.dataDeInicioDaAtividade());
+
+                    // Calculate the end date based on the start date and estimated duration
+                    LocalDate startDate = entity.getDataDeInicioDaAtividade();
+                    LocalDate endDate = startDate.plusDays(entity.getDuracaoEstimada());
+                    entity.setDataDeFimDaAtividade(endDate);
+                }
 
                 // Em seguida, atualize as dependências se elas estiverem presentes no DTO
                 if (atividadeDTO.dependencias() != null) {
@@ -100,7 +119,7 @@ public class AtividadeServiceImpl implements AtividadeService {
                     // Converta a lista de dependências em uma lista de IDs
                     List<Long> dependenciasIdsFromEntities = dependencias.stream()
                             .map(Atividade::getId)
-                            .toList(); // Alterado de collect(Collectors.toList()) para toList()
+                            .toList();
 
                     // Associe as dependências à atividade
                     entity.setDependencias(dependenciasIdsFromEntities);
@@ -121,7 +140,6 @@ public class AtividadeServiceImpl implements AtividadeService {
             throw new ResourceNotFoundException(ID_NOT_FOUND_MESSAGE + id);
         }
     }
-
 
 
 

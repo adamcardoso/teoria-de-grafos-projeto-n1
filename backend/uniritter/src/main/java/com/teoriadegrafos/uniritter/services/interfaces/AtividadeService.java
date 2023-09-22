@@ -17,4 +17,6 @@ public interface AtividadeService {
     AtividadeDTO atualizarAtividade(Long id, AtividadeDTO atividadeDTO);
 
     void removerAtividade(Long id);
+
+
 }
