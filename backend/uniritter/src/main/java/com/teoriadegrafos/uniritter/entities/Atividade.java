@@ -25,4 +25,7 @@ public class Atividade {
 
     @ElementCollection(fetch = FetchType.EAGER)
     private List<Long> dependencias;
+
+    private LocalDate dataDeInicioMaisCedo; // Tempo de Início Mais Cedo (ES)
+    private LocalDate dataDeTerminoMaisCedo; // Tempo de Término Mais Cedo (EF)
 }

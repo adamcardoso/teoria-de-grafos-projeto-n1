@@ -8,12 +8,13 @@ public record AtividadeDTO(
         Long id,
         String nome,
         String identificador,
-
         LocalDate dataDeInicioDaAtividade,
-
         int duracaoEstimada,
         LocalDate dataDeFimDaAtividade, // Include dataDeFimDaAtividade field
-        List<Long> dependencias
+        List<Long> dependencias,
+
+        LocalDate dataDeInicioMaisCedo,
+        LocalDate dataDeTerminoMaisCedo
 ) {
     public AtividadeDTO(Atividade atividade) {
         this(
@@ -23,7 +24,9 @@ public record AtividadeDTO(
                 atividade.getDataDeInicioDaAtividade(),
                 atividade.getDuracaoEstimada(),
                 atividade.getDataDeFimDaAtividade(), // Map the dataDeFimDaAtividade field
-                atividade.getDependencias()
+                atividade.getDependencias(),
+                atividade.getDataDeTerminoMaisCedo(),
+                atividade.getDataDeTerminoMaisCedo()
         );
     }
 }

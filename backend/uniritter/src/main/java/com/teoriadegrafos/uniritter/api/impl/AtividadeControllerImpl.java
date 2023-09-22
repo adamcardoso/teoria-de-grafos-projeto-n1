@@ -7,11 +7,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
+import java.util.List;
 import java.util.Optional;
 
 @RestController
@@ -80,6 +82,21 @@ public class AtividadeControllerImpl implements AtividadeController {
         logger.info("Deletando uma pessoa com ID: {}", id);
 
         return ResponseEntity.noContent().build();
+    }
+
+    @Override
+    @GetMapping("/caminho-critico")
+    public ResponseEntity<List<AtividadeDTO>> obterCaminhoCritico() {
+        logger.info("Chamada ao endpoint /api/atividade/caminho-critico");
+
+        try {
+            List<AtividadeDTO> caminhoCritico = atividadeService.calcularCaminhoCritico();
+            logger.info("Caminho crítico calculado com sucesso.");
+            return ResponseEntity.ok(caminhoCritico);
+        } catch (Exception e) {
+            logger.error("Ocorreu um erro ao calcular o caminho crítico: " + e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
     }
 }
 

@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -53,6 +54,14 @@ public class AtividadeServiceImpl implements AtividadeService {
             LocalDate endDate = startDate.plusDays(entity.getDuracaoEstimada());
             entity.setDataDeFimDaAtividade(endDate);
 
+            // Defina o Tempo de Início Mais Cedo (ES) como a Data de Início da Atividade
+            entity.setDataDeInicioMaisCedo(entity.getDataDeInicioDaAtividade());
+
+            // Calcule o Tempo de Término Mais Cedo (EF) com base no Tempo de Início Mais Cedo (ES)
+            LocalDate dataDeInicioMaisCedo = entity.getDataDeInicioMaisCedo();
+            LocalDate dataDeTerminoMaisCedo = dataDeInicioMaisCedo.plusDays(entity.getDuracaoEstimada());
+            entity.setDataDeTerminoMaisCedo(dataDeTerminoMaisCedo);
+
             // Se a lista de dependências não for nula, processe as dependências
             if (atividadeDTO.dependencias() != null) {
                 // Certifique-se de que as dependências existem no banco de dados
@@ -76,8 +85,6 @@ public class AtividadeServiceImpl implements AtividadeService {
             throw new AtividadeNotFoundException("Erro ao inserir atividade no banco de dados");
         }
     }
-
-
 
     @Override
     @Transactional
@@ -141,8 +148,6 @@ public class AtividadeServiceImpl implements AtividadeService {
         }
     }
 
-
-
     @Override
     public void removerAtividade(Long id) {
         try{
@@ -155,6 +160,28 @@ public class AtividadeServiceImpl implements AtividadeService {
             throw new AtividadeNotFoundException("Erro ao excluir pessoa do banco de dados");
         }
     }
+
+    @Override
+    public List<AtividadeDTO> calcularCaminhoCritico() {
+        List<Atividade> atividades = atividadeRepository.findAll();
+        List<AtividadeDTO> caminhoCritico = new ArrayList<>();
+
+        // Encontre a data de término mais tardia (LF) entre todas as atividades
+        LocalDate dataDeTerminoMaisTardia = atividades.stream()
+                .map(Atividade::getDataDeTerminoMaisCedo)
+                .max(LocalDate::compareTo)
+                .orElse(LocalDate.now());
+
+        // Percorra as atividades para verificar se a data de término mais tardia coincide com a data de término mais cedo
+        for (Atividade atividade : atividades) {
+            if (atividade.getDataDeTerminoMaisCedo().equals(dataDeTerminoMaisTardia)) {
+                caminhoCritico.add(new AtividadeDTO(atividade));
+            }
+        }
+
+        return caminhoCritico;
+    }
+
 
     private void copyDtoToEntity(AtividadeDTO atividadeDTO, Atividade atividade){
         atividade.setNome(atividadeDTO.nome());

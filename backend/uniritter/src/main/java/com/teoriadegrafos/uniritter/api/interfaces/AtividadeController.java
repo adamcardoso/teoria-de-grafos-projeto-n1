@@ -1,11 +1,12 @@
 package com.teoriadegrafos.uniritter.api.interfaces;
 
 import com.teoriadegrafos.uniritter.dto.AtividadeDTO;
-import com.teoriadegrafos.uniritter.entities.Atividade;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.data.domain.Pageable;
+
+import java.util.List;
 
 public interface AtividadeController {
 
@@ -23,4 +24,7 @@ public interface AtividadeController {
 
     @DeleteMapping("/remover/{id}")
     ResponseEntity<Void> removerAtividade(@PathVariable Long id);
+
+    @GetMapping("/caminho-critico")
+    ResponseEntity<List<AtividadeDTO>> obterCaminhoCritico();
 }
