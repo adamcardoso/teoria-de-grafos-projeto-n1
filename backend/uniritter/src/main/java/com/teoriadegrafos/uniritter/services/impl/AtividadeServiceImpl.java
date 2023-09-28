@@ -3,6 +3,7 @@ package com.teoriadegrafos.uniritter.services.impl;
 import com.teoriadegrafos.uniritter.entities.Atividade;
 import com.teoriadegrafos.uniritter.entities.Projeto;
 import com.teoriadegrafos.uniritter.entities.RelacionamentoDependenciaLiberadas;
+import com.teoriadegrafos.uniritter.entities.RelacionamentoDependenciaLiberadasID;
 import com.teoriadegrafos.uniritter.entities.enums.StatusEnum;
 import com.teoriadegrafos.uniritter.exceptions.ResourceNotFoundException;
 import com.teoriadegrafos.uniritter.repositories.AtividadeRepository;
@@ -66,6 +67,58 @@ public class AtividadeServiceImpl{
         return projetoBO;
     }
 
+
+
+    public AtividadeBO criarAtividade(String nome, Integer duracaoAtividade, Integer idProjeto, Integer idAtividadeDependecia) {
+        ProjetoBO projeto = buscarProjetoPorId(idProjeto);
+
+        if(isNull(projeto.getAtividades()) || isNull(idAtividadeDependecia)){
+            AtividadeBO atividadePrincipal = AtividadeBO.builder()
+                                                    .diasDuracaoAtividade(duracaoAtividade)
+                                                    .nome(nome)
+                                                    .status(StatusEnum.INATIVA)
+                                                    .build();
+            projeto.getAtividades().add(atividadePrincipal);
+
+            Atividade save = atividadeRepository.save(atividadeConverter.atitivdadeToEntity(atividadePrincipal));
+
+            relacionamentoDependenciaLiberadasRepository.save(
+                    RelacionamentoDependenciaLiberadas.builder()
+                                                        .id(RelacionamentoDependenciaLiberadasID.builder()
+                                                                .idAtividade(save.getId())
+                                                                .idProjeto(idProjeto)
+                                                                .build())
+                                                        .build()
+            );
+            return atividadePrincipal;
+        }else{
+            AtividadeBO dependecia = projeto
+                    .getAtividades()
+                    .stream()
+                    .filter(
+                            atividade -> atividade.getId().equals(idAtividadeDependecia)
+                    )
+                    .findFirst()
+                    .orElseThrow(() -> new ResourceNotFoundException("Atividade não encontrada"));
+
+            AtividadeBO atividade = AtividadeBO.builder()
+                    .diasDuracaoAtividade(duracaoAtividade)
+                    .nome(nome)
+                    .status(StatusEnum.DEPENDENTE)
+                    .build();
+
+            dependecia.getAtividadesLiberadas().add(atividade);
+            atividade.getAtividadesDependentes().add(atividade);
+
+            return atividade;
+        }
+    }
+
+    public void atualizarStatusAtividade(Integer idAtividade){
+
+    }
+
+
     private List<AtividadeBO> buscarAtividadeProjeto(ProjetoBO projeto) {
         List<Atividade> byIdProjeto = atividadeRepository.findByIdProjeto(projeto.getId());
         return montarAtividadeEmGrafos(byIdProjeto.stream().map(atividadeConverter::atitivdadeToBo).collect(Collectors.toList()), projeto.getId());
@@ -73,7 +126,7 @@ public class AtividadeServiceImpl{
 
     private List<AtividadeBO> montarAtividadeEmGrafos(List<AtividadeBO> atividades, Integer idProjeto) {
         List<RelacionamentoDependenciaLiberadas> relacionamentoDependencias = relacionamentoDependenciaLiberadasRepository
-                                                                                .findRelacionamentoDependenciaLiberadasByIdProjeto(idProjeto);
+                .findRelacionamentoDependenciaLiberadasByIdProjeto(idProjeto);
 
         atividades.forEach(atividade ->{
             List<RelacionamentoDependenciaLiberadas> listaDependenciasAtividade = relacionamentoDependencias
@@ -92,58 +145,5 @@ public class AtividadeServiceImpl{
 
         });
         return atividades;
-    }
-
-    public Atividade criarAtividade(String nome, Integer duracaoAtividade, Projeto projeto, Integer idAtividadeDependecia) {
-        if(isNull(projeto.getAtividades()) && isNull(idAtividadeDependecia)){
-            Atividade atividadePrincipal = Atividade.builder()
-                                                    .id(ID)
-                                                    .diasDuracaoAtividade(duracaoAtividade)
-                                                    .nome(nome)
-                                                    .status(StatusEnum.INATIVA)
-                                                    .build();
-            projeto.getAtividades().add(atividadePrincipal);
-            return atividadePrincipal;
-        }else{
-            if(isNull(idAtividadeDependecia)){
-                Atividade atividadeSemDependencia = Atividade.builder()
-                                                .id(++ID)
-                                                .diasDuracaoAtividade(duracaoAtividade)
-                                                .nome(nome)
-                                                .status(StatusEnum.INATIVA)
-                                                .build();
-                projeto.getAtividades().add(atividadeSemDependencia);
-                return atividadeSemDependencia;
-            }else{
-                Atividade dependecia = projeto
-                        .getAtividades()
-                        .stream()
-                        .filter(
-                                atividade -> atividade.getId().equals(idAtividadeDependecia)
-                        )
-                        .findFirst()
-                        .orElseThrow(() -> new ResourceNotFoundException("Atividade não encontrada"));
-
-                Atividade atividade = Atividade.builder()
-                        .id(++ID)
-                        .diasDuracaoAtividade(duracaoAtividade)
-                        .nome(nome)
-                        .status(StatusEnum.DEPENDENTE)
-                        .build();
-
-                dependecia.getAtividadesLiberadas().add(atividade);
-                atividade.getAtividadesDependentes().add(atividade);
-
-                return atividade;
-            }
-        }
-    }
-
-    public void atualizarStatusAtividade(Integer idAtividade){
-
-    }
-
-    private Atividade buscarRecursivo(Integer idAtividade, Integer idProjeto){
-
     }
 }
