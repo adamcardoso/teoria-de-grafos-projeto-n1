@@ -8,5 +8,5 @@ import java.util.List;
 
 public interface RelacionamentoDependenciaLiberadasRepository extends JpaRepository<RelacionamentoDependenciaLiberadas, RelacionamentoDependenciaLiberadasID> {
 
-    List<RelacionamentoDependenciaLiberadas> findRelacionamentoDependenciaLiberadasByIdProjeto(Integer idProjeto);
+    List<RelacionamentoDependenciaLiberadas> findByIdProjeto(Integer idProjeto);
 }

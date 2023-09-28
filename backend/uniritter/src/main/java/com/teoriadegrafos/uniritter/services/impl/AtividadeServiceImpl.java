@@ -85,8 +85,8 @@ public class AtividadeServiceImpl{
             relacionamentoDependenciaLiberadasRepository.save(
                     RelacionamentoDependenciaLiberadas.builder()
                                                         .id(RelacionamentoDependenciaLiberadasID.builder()
-                                                                .idAtividade(save.getId())
-                                                                .idProjeto(idProjeto)
+                                                                .atividade(save.getId())
+                                                                .projeto(idProjeto)
                                                                 .build())
                                                         .build()
             );
@@ -126,19 +126,19 @@ public class AtividadeServiceImpl{
 
     private List<AtividadeBO> montarAtividadeEmGrafos(List<AtividadeBO> atividades, Integer idProjeto) {
         List<RelacionamentoDependenciaLiberadas> relacionamentoDependencias = relacionamentoDependenciaLiberadasRepository
-                .findRelacionamentoDependenciaLiberadasByIdProjeto(idProjeto);
+                .findByIdProjeto(idProjeto);
 
         atividades.forEach(atividade ->{
             List<RelacionamentoDependenciaLiberadas> listaDependenciasAtividade = relacionamentoDependencias
                     .stream()
-                    .filter(relacionamento -> relacionamento.getId().getIdAtividade().equals(atividade.getId()))
+                    .filter(relacionamento -> relacionamento.getId().getAtividade().equals(atividade.getId()))
                     .toList();
             listaDependenciasAtividade.forEach(depen ->{
-                if(nonNull(depen.getId().getIdDependencia())){
-                    Optional<AtividadeBO> first = atividades.stream().filter(at -> at.getId().equals(depen.getId().getIdDependencia())).findFirst();
+                if(nonNull(depen.getId().getDependencia())){
+                    Optional<AtividadeBO> first = atividades.stream().filter(at -> at.getId().equals(depen.getId().getDependencia())).findFirst();
                     first.ifPresent(at -> atividade.getAtividadesDependentes().add(at));
-                }else if(nonNull(depen.getId().getIdLiberada())){
-                    Optional<AtividadeBO> first = atividades.stream().filter(at -> at.getId().equals(depen.getId().getIdDependencia())).findFirst();
+                }else if(nonNull(depen.getId().getLiberada())){
+                    Optional<AtividadeBO> first = atividades.stream().filter(at -> at.getId().equals(depen.getId().getDependencia())).findFirst();
                     first.ifPresent(at -> atividade.getAtividadesLiberadas().add(at));
                 }
             });

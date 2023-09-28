@@ -14,8 +14,8 @@ import java.io.Serializable;
 @Builder
 @Embeddable
 public class RelacionamentoDependenciaLiberadasID implements Serializable {
-    private Integer idAtividade;
-    private Integer idDependencia;
-    private Integer idLiberada;
-    private Integer idProjeto;
+    private Integer atividade;
+    private Integer dependencia;
+    private Integer liberada;
+    private Integer projeto;
 }
