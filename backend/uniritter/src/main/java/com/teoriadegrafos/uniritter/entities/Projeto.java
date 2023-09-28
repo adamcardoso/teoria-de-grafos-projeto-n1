@@ -1,19 +1,27 @@
 package com.teoriadegrafos.uniritter.entities;
 
-import lombok.*;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
 
-@NoArgsConstructor
+
+@Entity(name = "projeto")
+@Data
+@Builder
 @AllArgsConstructor
-@Getter
-@Setter
-@ToString
+@NoArgsConstructor
 public class Projeto {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
     private String nome;
     private LocalDate dataInicioProjeto;
     private LocalDate dataFimProjeto;
-    private List<Atividade> atividades = new ArrayList<>();
 }

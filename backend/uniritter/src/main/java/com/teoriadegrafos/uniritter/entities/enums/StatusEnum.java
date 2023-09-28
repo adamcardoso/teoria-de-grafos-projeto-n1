@@ -1,4 +1,4 @@
-package com.teoriadegrafos.uniritter.entities;
+package com.teoriadegrafos.uniritter.entities.enums;
 
 import lombok.RequiredArgsConstructor;
 

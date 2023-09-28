@@ -2,27 +2,96 @@ package com.teoriadegrafos.uniritter.services.impl;
 
 import com.teoriadegrafos.uniritter.entities.Atividade;
 import com.teoriadegrafos.uniritter.entities.Projeto;
-import com.teoriadegrafos.uniritter.entities.StatusEnum;
+import com.teoriadegrafos.uniritter.entities.RelacionamentoDependenciaLiberadas;
+import com.teoriadegrafos.uniritter.entities.enums.StatusEnum;
 import com.teoriadegrafos.uniritter.exceptions.ResourceNotFoundException;
+import com.teoriadegrafos.uniritter.repositories.AtividadeRepository;
+import com.teoriadegrafos.uniritter.repositories.ProjetoRepository;
+import com.teoriadegrafos.uniritter.repositories.RelacionamentoDependenciaLiberadasRepository;
+import com.teoriadegrafos.uniritter.repositories.converters.AtividadeConverter;
+import com.teoriadegrafos.uniritter.repositories.converters.ProjetoConverter;
+import com.teoriadegrafos.uniritter.services.impl.bos.AtividadeBO;
+import com.teoriadegrafos.uniritter.services.impl.bos.ProjetoBO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 @Service
 @RequiredArgsConstructor
 public class AtividadeServiceImpl{
     private static Integer ID = 1;
     private static final String ID_NOT_FOUND_MESSAGE = "Id não encontrado ";
-    private final Projeto projeto;
+    private final ProjetoRepository projetoRepository;
+    private final AtividadeRepository atividadeRepository;
+    private final ProjetoConverter projetoConverter;
+    private final AtividadeConverter atividadeConverter;
+    private final RelacionamentoDependenciaLiberadasRepository relacionamentoDependenciaLiberadasRepository;
 
-    public Projeto criarProjeto(String nome, LocalDate dataInicio, LocalDate dataFim){
-        projeto.setDataInicioProjeto(dataInicio);
-        projeto.setDataFimProjeto(dataFim);
-        projeto.setNome(nome);
-        return projeto;
+    public ProjetoBO criarProjeto(String nome, LocalDate dataInicio, LocalDate dataFim){
+        ProjetoBO build = ProjetoBO.builder()
+                .dataFimProjeto(dataFim)
+                .dataInicioProjeto(dataInicio)
+                .nome(nome)
+                .build();
+        Projeto save = projetoRepository.save(projetoConverter.projetoToEntity(build));
+
+        build.setId(save.getId());
+        return build;
+    }
+
+    public List<ProjetoBO> buscarTodoProjetos(){
+        List<ProjetoBO> all = projetoRepository.findAll().stream().map(projetoConverter::projetoToBo).collect(Collectors.toList());
+        all.forEach(projeto -> {
+
+            List<AtividadeBO> atividadesProjeto = new ArrayList<>(buscarAtividadeProjeto(projeto));
+
+            projeto.setAtividades(atividadesProjeto);
+        });
+
+        return all;
+    }
+
+    public ProjetoBO buscarProjetoPorId(Integer idProjeto){
+        ProjetoBO projetoBO = projetoRepository.findById(idProjeto).map(projetoConverter::projetoToBo).orElseThrow(()-> new ResourceNotFoundException("Projeto não encontrado"));
+        List<AtividadeBO> atividadeBOS = buscarAtividadeProjeto(projetoBO);
+        projetoBO.setAtividades(atividadeBOS);
+        return projetoBO;
+    }
+
+    private List<AtividadeBO> buscarAtividadeProjeto(ProjetoBO projeto) {
+        List<Atividade> byIdProjeto = atividadeRepository.findByIdProjeto(projeto.getId());
+        return montarAtividadeEmGrafos(byIdProjeto.stream().map(atividadeConverter::atitivdadeToBo).collect(Collectors.toList()), projeto.getId());
+    }
+
+    private List<AtividadeBO> montarAtividadeEmGrafos(List<AtividadeBO> atividades, Integer idProjeto) {
+        List<RelacionamentoDependenciaLiberadas> relacionamentoDependencias = relacionamentoDependenciaLiberadasRepository
+                                                                                .findRelacionamentoDependenciaLiberadasByIdProjeto(idProjeto);
+
+        atividades.forEach(atividade ->{
+            List<RelacionamentoDependenciaLiberadas> listaDependenciasAtividade = relacionamentoDependencias
+                    .stream()
+                    .filter(relacionamento -> relacionamento.getId().getIdAtividade().equals(atividade.getId()))
+                    .toList();
+            listaDependenciasAtividade.forEach(depen ->{
+                if(nonNull(depen.getId().getIdDependencia())){
+                    Optional<AtividadeBO> first = atividades.stream().filter(at -> at.getId().equals(depen.getId().getIdDependencia())).findFirst();
+                    first.ifPresent(at -> atividade.getAtividadesDependentes().add(at));
+                }else if(nonNull(depen.getId().getIdLiberada())){
+                    Optional<AtividadeBO> first = atividades.stream().filter(at -> at.getId().equals(depen.getId().getIdDependencia())).findFirst();
+                    first.ifPresent(at -> atividade.getAtividadesLiberadas().add(at));
+                }
+            });
+
+        });
+        return atividades;
     }
 
     public Atividade criarAtividade(String nome, Integer duracaoAtividade, Projeto projeto, Integer idAtividadeDependecia) {
@@ -54,6 +123,7 @@ public class AtividadeServiceImpl{
                         )
                         .findFirst()
                         .orElseThrow(() -> new ResourceNotFoundException("Atividade não encontrada"));
+
                 Atividade atividade = Atividade.builder()
                         .id(++ID)
                         .diasDuracaoAtividade(duracaoAtividade)
@@ -67,5 +137,13 @@ public class AtividadeServiceImpl{
                 return atividade;
             }
         }
+    }
+
+    public void atualizarStatusAtividade(Integer idAtividade){
+
+    }
+
+    private Atividade buscarRecursivo(Integer idAtividade, Integer idProjeto){
+
     }
 }

@@ -1,22 +1,25 @@
 package com.teoriadegrafos.uniritter.entities;
 
+import com.teoriadegrafos.uniritter.entities.enums.StatusEnum;
+import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
 
-@NoArgsConstructor
-@AllArgsConstructor
-@Getter
-@Setter
-@ToString
+@Data
 @Builder
+@Entity
+@AllArgsConstructor
+@NoArgsConstructor
 public class Atividade {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
     private String nome;
     private Integer diasDuracaoAtividade;
+    @Enumerated(EnumType.STRING)
     private StatusEnum status;
-    private List<Atividade> atividadesDependentes = new ArrayList<>();
-    private List<Atividade> atividadesLiberadas = new ArrayList<>();
+    private Integer idProjeto;
 }
