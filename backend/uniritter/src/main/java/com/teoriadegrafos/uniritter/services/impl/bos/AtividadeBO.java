@@ -1,11 +1,7 @@
 package com.teoriadegrafos.uniritter.services.impl.bos;
 
-import com.teoriadegrafos.uniritter.entities.Atividade;
 import com.teoriadegrafos.uniritter.entities.enums.StatusEnum;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -14,6 +10,8 @@ import java.util.Set;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@Getter
+@Setter
 public class AtividadeBO {
     private Integer id;
     private String nome;

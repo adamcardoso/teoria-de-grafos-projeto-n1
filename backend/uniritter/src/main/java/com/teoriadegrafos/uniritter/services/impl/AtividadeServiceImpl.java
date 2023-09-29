@@ -49,7 +49,7 @@ public class AtividadeServiceImpl{
     }
 
     public List<ProjetoBO> buscarTodoProjetos(){
-        List<ProjetoBO> all = projetoRepository.findAll().stream().map(projetoConverter::projetoToBo).collect(Collectors.toList());
+        List<ProjetoBO> all = projetoRepository.findAll().stream().map(projetoConverter::projetoToBo).toList();
         all.forEach(projeto -> {
 
             List<AtividadeBO> atividadesProjeto = new ArrayList<>(buscarAtividadeProjeto(projeto));
@@ -121,7 +121,7 @@ public class AtividadeServiceImpl{
 
     private List<AtividadeBO> buscarAtividadeProjeto(ProjetoBO projeto) {
         List<Atividade> byIdProjeto = atividadeRepository.findByIdProjeto(projeto.getId());
-        return montarAtividadeEmGrafos(byIdProjeto.stream().map(atividadeConverter::atitivdadeToBo).collect(Collectors.toList()), projeto.getId());
+        return montarAtividadeEmGrafos(byIdProjeto.stream().map(atividadeConverter::atitivdadeToBo).toList(), projeto.getId());
     }
 
     private List<AtividadeBO> montarAtividadeEmGrafos(List<AtividadeBO> atividades, Integer idProjeto) {
