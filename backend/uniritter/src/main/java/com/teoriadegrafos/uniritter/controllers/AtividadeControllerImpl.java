@@ -84,4 +84,13 @@ public class AtividadeControllerImpl {
         logger.info("Atualizando status da atividade com ID: " + idAtividade);
         return ResponseEntity.ok().build();
     }
+
+    @DeleteMapping("/atividades/{id}")
+    public ResponseEntity<Void> deletarAtividade(@PathVariable Integer id) {
+        atividadeService.deletarAtividade(id);
+
+        logger.info("Deletando uma atividade com ID: {}", id);
+
+        return ResponseEntity.noContent().build();
+    }
 }

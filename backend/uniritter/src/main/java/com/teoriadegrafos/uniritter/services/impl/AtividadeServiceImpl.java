@@ -20,7 +20,6 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -116,6 +115,14 @@ public class AtividadeServiceImpl{
 
     public void atualizarStatusAtividade(Integer idAtividade){
 
+    }
+
+    public void deletarAtividade(Integer idAtividade){
+        try{
+            atividadeRepository.deleteById(idAtividade);
+        }catch (Exception e){
+            throw new ResourceNotFoundException(ID_NOT_FOUND_MESSAGE);
+        }
     }
 
 
