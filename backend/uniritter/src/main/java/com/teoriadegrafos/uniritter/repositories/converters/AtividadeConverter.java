@@ -8,6 +8,8 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @Mapper(componentModel= "spring")
 public interface AtividadeConverter {
+
+//    @Mapping(source = "garantiaAvalista.valor", target = "garantiaAvalista")
     Atividade atitivdadeToEntity(AtividadeBO atividade);
     AtividadeBO atitivdadeToBo(Atividade atividade);
 }

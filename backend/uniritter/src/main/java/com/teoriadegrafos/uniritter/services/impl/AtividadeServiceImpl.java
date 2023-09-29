@@ -1,23 +1,18 @@
 package com.teoriadegrafos.uniritter.services.impl;
 
 import com.teoriadegrafos.uniritter.entities.Atividade;
-import com.teoriadegrafos.uniritter.entities.Projeto;
 import com.teoriadegrafos.uniritter.entities.RelacionamentoDependenciaLiberadas;
-import com.teoriadegrafos.uniritter.entities.RelacionamentoDependenciaLiberadasID;
 import com.teoriadegrafos.uniritter.entities.enums.StatusEnum;
 import com.teoriadegrafos.uniritter.exceptions.ResourceNotFoundException;
 import com.teoriadegrafos.uniritter.repositories.AtividadeRepository;
-import com.teoriadegrafos.uniritter.repositories.ProjetoRepository;
 import com.teoriadegrafos.uniritter.repositories.RelacionamentoDependenciaLiberadasRepository;
 import com.teoriadegrafos.uniritter.repositories.converters.AtividadeConverter;
-import com.teoriadegrafos.uniritter.repositories.converters.ProjetoConverter;
 import com.teoriadegrafos.uniritter.services.impl.bos.AtividadeBO;
 import com.teoriadegrafos.uniritter.services.impl.bos.ProjetoBO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -29,106 +24,75 @@ import static java.util.Objects.nonNull;
 @Service
 @RequiredArgsConstructor
 public class AtividadeServiceImpl{
-    private static Integer ID = 1;
     private static final String ID_NOT_FOUND_MESSAGE = "Id não encontrado ";
-    private final ProjetoRepository projetoRepository;
     private final AtividadeRepository atividadeRepository;
-    private final ProjetoConverter projetoConverter;
+    private final ProjetoServiceImpl projetoService;
     private final AtividadeConverter atividadeConverter;
     private final RelacionamentoDependenciaLiberadasRepository relacionamentoDependenciaLiberadasRepository;
 
-    public ProjetoBO criarProjeto(String nome, LocalDate dataInicio, LocalDate dataFim){
-        ProjetoBO build = ProjetoBO.builder()
-                .dataFimProjeto(dataFim)
-                .dataInicioProjeto(dataInicio)
-                .nome(nome)
-                .build();
-        Projeto save = projetoRepository.save(projetoConverter.projetoToEntity(build));
-
-        build.setId(save.getId());
-        return build;
-    }
-
-    public List<ProjetoBO> buscarTodoProjetos(){
-        List<ProjetoBO> all = projetoRepository.findAll().stream().map(projetoConverter::projetoToBo).collect(Collectors.toList());
-        all.forEach(projeto -> {
-
-            List<AtividadeBO> atividadesProjeto = new ArrayList<>(buscarAtividadeProjeto(projeto));
-
-            projeto.setAtividades(atividadesProjeto);
-        });
-
-        return all;
-    }
-
-    public ProjetoBO buscarProjetoPorId(Integer idProjeto){
-        ProjetoBO projetoBO = projetoRepository.findById(idProjeto).map(projetoConverter::projetoToBo).orElseThrow(()-> new ResourceNotFoundException("Projeto não encontrado"));
-        List<AtividadeBO> atividadeBOS = buscarAtividadeProjeto(projetoBO);
-        projetoBO.setAtividades(atividadeBOS);
-        return projetoBO;
-    }
-
-
-
     public AtividadeBO criarAtividade(String nome, Integer duracaoAtividade, Integer idProjeto, Integer idAtividadeDependecia) {
-        ProjetoBO projeto = buscarProjetoPorId(idProjeto);
+        ProjetoBO projeto = projetoService.buscarProjetoPorIdSemAtividades(idProjeto);
 
-        if(isNull(projeto.getAtividades()) || isNull(idAtividadeDependecia)){
+        if(isNull(idAtividadeDependecia)){
             AtividadeBO atividadePrincipal = AtividadeBO.builder()
                                                     .diasDuracaoAtividade(duracaoAtividade)
                                                     .nome(nome)
                                                     .status(StatusEnum.INATIVA)
+                                                    .idProjeto(idProjeto)
+                                                    .diasDuracaoAtividade(duracaoAtividade)
                                                     .build();
-            projeto.getAtividades().add(atividadePrincipal);
+
+            if(nonNull(projeto.getAtividades())){
+                projeto.getAtividades().add(atividadePrincipal);
+            }else{
+                projeto.setAtividades(Collections.singletonList(atividadePrincipal));
+            }
 
             Atividade save = atividadeRepository.save(atividadeConverter.atitivdadeToEntity(atividadePrincipal));
-
+            atividadePrincipal.setId(save.getId());
             relacionamentoDependenciaLiberadasRepository.save(
                     RelacionamentoDependenciaLiberadas.builder()
-                                                        .id(RelacionamentoDependenciaLiberadasID.builder()
-                                                                .atividade(save.getId())
-                                                                .projeto(idProjeto)
-                                                                .build())
+                                                        .atividade(save.getId())
+                                                        .projeto(idProjeto)
                                                         .build()
             );
             return atividadePrincipal;
         }else{
-            AtividadeBO dependecia = buscarAtividadePendentcia(projeto.getAtividades(), idAtividadeDependecia);
+            AtividadeBO dependecia = buscarAtividadePendencia(projeto.getAtividades(), idAtividadeDependecia);
 
             AtividadeBO atividade = AtividadeBO.builder()
                     .diasDuracaoAtividade(duracaoAtividade)
                     .nome(nome)
                     .status(StatusEnum.DEPENDENTE)
+                    .idProjeto(idProjeto)
+                    .diasDuracaoAtividade(duracaoAtividade)
                     .build();
 
-            dependecia.getAtividadesLiberadas().add(atividade);
-            atividade.getAtividadesDependentes().add(atividade);
+            if (nonNull(dependecia.getAtividadesLiberadas())) {
+                dependecia.getAtividadesLiberadas().add(atividade);
+            } else {
+                dependecia.setAtividadesLiberadas(Collections.singleton(atividade));
+            }
+
+            if (nonNull(atividade.getAtividadesDependentes())) {
+                atividade.getAtividadesDependentes().add(atividade);
+            } else {
+                atividade.setAtividadesDependentes(Collections.singleton(atividade));
+            }
 
             Atividade save = atividadeRepository.save(atividadeConverter.atitivdadeToEntity(atividade));
 
             relacionamentoDependenciaLiberadasRepository.save(
                     RelacionamentoDependenciaLiberadas.builder()
-                            .id(RelacionamentoDependenciaLiberadasID.builder()
-                                    .atividade(save.getId())
-                                    .dependencia(dependecia.getId())
-                                    .projeto(idProjeto)
-                                    .build())
+                            .atividade(save.getId())
+                            .dependencia(dependecia.getId())
+                            .projeto(idProjeto)
                             .build());
-
-            relacionamentoDependenciaLiberadasRepository.save(
-                    RelacionamentoDependenciaLiberadas.builder()
-                            .id(RelacionamentoDependenciaLiberadasID.builder()
-                                    .atividade(dependecia.getId())
-                                    .liberada(save.getId())
-                                    .projeto(idProjeto)
-                                    .build())
-                            .build());
-
             return atividade;
         }
     }
 
-    private AtividadeBO buscarAtividadePendentcia(List<AtividadeBO> atividades, Integer idAtividadeDependecia) {
+    private AtividadeBO buscarAtividadePendencia(List<AtividadeBO> atividades, Integer idAtividadeDependecia) {
         List<AtividadeBO> atividadesFiltradas = atividades.stream().filter(atividade -> atividade.getId().equals(idAtividadeDependecia)).collect(Collectors.toList());
         if(atividadesFiltradas.isEmpty()){
             atividades.forEach(atividade ->{
@@ -152,35 +116,56 @@ public class AtividadeServiceImpl{
         });
     }
 
-    public void atualizarStatusAtividade(Integer idAtividade){
+    public void atualizarStatusAtividade(Integer idAtividade, StatusEnum novoStatus) {
+        Atividade atividade = atividadeRepository.findById(idAtividade)
+                .orElseThrow(() -> new ResourceNotFoundException("Atividade não encontrada com o ID: " + idAtividade));
 
+        atividade.setStatus(novoStatus);
+
+        atividadeRepository.save(atividade);
     }
 
+    public void deletarAtividade(Integer idAtividade){
+        try{
+            atividadeRepository.deleteById(idAtividade);
+        }catch (Exception e){
+            throw new ResourceNotFoundException(ID_NOT_FOUND_MESSAGE);
+        }
+    }
 
-    private List<AtividadeBO> buscarAtividadeProjeto(ProjetoBO projeto) {
+    public List<AtividadeBO> buscarAtividadeProjeto(ProjetoBO projeto) {
         List<Atividade> byIdProjeto = atividadeRepository.findByIdProjeto(projeto.getId());
         return montarAtividadeEmGrafos(byIdProjeto.stream().map(atividadeConverter::atitivdadeToBo).collect(Collectors.toList()), projeto.getId());
     }
 
     private List<AtividadeBO> montarAtividadeEmGrafos(List<AtividadeBO> atividades, Integer idProjeto) {
         List<RelacionamentoDependenciaLiberadas> relacionamentoDependencias = relacionamentoDependenciaLiberadasRepository
-                .findByIdProjeto(idProjeto);
+                .findByProjeto(idProjeto);
 
         atividades.forEach(atividade ->{
             List<RelacionamentoDependenciaLiberadas> listaDependenciasAtividade = relacionamentoDependencias
                     .stream()
-                    .filter(relacionamento -> relacionamento.getId().getAtividade().equals(atividade.getId()))
+                    .filter(relacionamento -> relacionamento.getDependencia().equals(atividade.getId()))
                     .toList();
+
             listaDependenciasAtividade.forEach(depen ->{
-                if(nonNull(depen.getId().getDependencia())){
-                    Optional<AtividadeBO> first = atividades.stream().filter(at -> at.getId().equals(depen.getId().getDependencia())).findFirst();
-                    first.ifPresent(at -> atividade.getAtividadesDependentes().add(at));
-                }else if(nonNull(depen.getId().getLiberada())){
-                    Optional<AtividadeBO> first = atividades.stream().filter(at -> at.getId().equals(depen.getId().getDependencia())).findFirst();
-                    first.ifPresent(at -> atividade.getAtividadesLiberadas().add(at));
+                Optional<AtividadeBO> atividadeFiltradaDepencia = atividades.stream()
+                                                                    .filter(ativFiltrada -> ativFiltrada.getId().equals(depen.getDependencia()))
+                                                                    .findFirst();
+                if(atividadeFiltradaDepencia.isPresent()){
+                    if (nonNull(atividade.getAtividadesLiberadas())) {
+                        atividade.getAtividadesLiberadas().add(atividadeFiltradaDepencia.get());
+                    } else {
+                        atividade.setAtividadesLiberadas(Collections.singleton(atividadeFiltradaDepencia.get()));
+                    }
+
+                    if (nonNull(atividadeFiltradaDepencia.get().getAtividadesDependentes())) {
+                        atividadeFiltradaDepencia.get().getAtividadesDependentes().add(atividade);
+                    } else {
+                        atividadeFiltradaDepencia.get().setAtividadesDependentes(Collections.singleton(atividade));
+                    }
                 }
             });
-
         });
         return atividades;
     }

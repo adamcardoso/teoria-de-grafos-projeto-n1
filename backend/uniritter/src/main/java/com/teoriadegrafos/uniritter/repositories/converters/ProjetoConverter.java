@@ -8,6 +8,5 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @Mapper(componentModel= "spring")
 public interface ProjetoConverter {
-    Projeto projetoToEntity(ProjetoBO projeto);
     ProjetoBO projetoToBo(Projeto projeto);
 }
