@@ -20,6 +20,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.isNull;
@@ -92,14 +93,7 @@ public class AtividadeServiceImpl{
             );
             return atividadePrincipal;
         }else{
-            AtividadeBO dependecia = projeto
-                    .getAtividades()
-                    .stream()
-                    .filter(
-                            atividade -> atividade.getId().equals(idAtividadeDependecia)
-                    )
-                    .findFirst()
-                    .orElseThrow(() -> new ResourceNotFoundException("Atividade não encontrada"));
+            AtividadeBO dependecia = buscarAtividadePendentcia(projeto.getAtividades(), idAtividadeDependecia);
 
             AtividadeBO atividade = AtividadeBO.builder()
                     .diasDuracaoAtividade(duracaoAtividade)
@@ -110,8 +104,52 @@ public class AtividadeServiceImpl{
             dependecia.getAtividadesLiberadas().add(atividade);
             atividade.getAtividadesDependentes().add(atividade);
 
+            Atividade save = atividadeRepository.save(atividadeConverter.atitivdadeToEntity(atividade));
+
+            relacionamentoDependenciaLiberadasRepository.save(
+                    RelacionamentoDependenciaLiberadas.builder()
+                            .id(RelacionamentoDependenciaLiberadasID.builder()
+                                    .atividade(save.getId())
+                                    .dependencia(dependecia.getId())
+                                    .projeto(idProjeto)
+                                    .build())
+                            .build());
+
+            relacionamentoDependenciaLiberadasRepository.save(
+                    RelacionamentoDependenciaLiberadas.builder()
+                            .id(RelacionamentoDependenciaLiberadasID.builder()
+                                    .atividade(dependecia.getId())
+                                    .liberada(save.getId())
+                                    .projeto(idProjeto)
+                                    .build())
+                            .build());
+
             return atividade;
         }
+    }
+
+    private AtividadeBO buscarAtividadePendentcia(List<AtividadeBO> atividades, Integer idAtividadeDependecia) {
+        List<AtividadeBO> atividadesFiltradas = atividades.stream().filter(atividade -> atividade.getId().equals(idAtividadeDependecia)).collect(Collectors.toList());
+        if(atividadesFiltradas.isEmpty()){
+            atividades.forEach(atividade ->{
+                if(!atividade.getAtividadesLiberadas().isEmpty()){
+                    buscarRecursivo(idAtividadeDependecia, atividade.getAtividadesLiberadas(), atividadesFiltradas);
+                }
+            });
+        }
+        return atividadesFiltradas.stream().findFirst().orElseThrow(()-> new ResourceNotFoundException("Dependencia não encontrada"));
+
+    }
+
+        private void buscarRecursivo(Integer idAtividadeDependecia,  Set<AtividadeBO> inferior, List<AtividadeBO> atividadesFiltradas) {
+        inferior.forEach(atividadeInferior -> {
+            if(atividadeInferior.getId().equals(idAtividadeDependecia)){
+                atividadesFiltradas.add(atividadeInferior);
+            }
+            if (nonNull(atividadeInferior.getAtividadesLiberadas()) && !atividadeInferior.getAtividadesLiberadas().isEmpty()) {
+                buscarRecursivo(idAtividadeDependecia, atividadeInferior.getAtividadesLiberadas(), atividadesFiltradas);
+            }
+        });
     }
 
     public void atualizarStatusAtividade(Integer idAtividade){
