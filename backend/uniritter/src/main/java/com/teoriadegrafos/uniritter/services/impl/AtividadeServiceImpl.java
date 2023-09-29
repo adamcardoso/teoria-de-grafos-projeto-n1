@@ -113,8 +113,13 @@ public class AtividadeServiceImpl{
         }
     }
 
-    public void atualizarStatusAtividade(Integer idAtividade){
+    public void atualizarStatusAtividade(Integer idAtividade, StatusEnum novoStatus) {
+        Atividade atividade = atividadeRepository.findById(idAtividade)
+                .orElseThrow(() -> new ResourceNotFoundException("Atividade não encontrada com o ID: " + idAtividade));
 
+        atividade.setStatus(novoStatus);
+
+        atividadeRepository.save(atividade);
     }
 
     public void deletarAtividade(Integer idAtividade){

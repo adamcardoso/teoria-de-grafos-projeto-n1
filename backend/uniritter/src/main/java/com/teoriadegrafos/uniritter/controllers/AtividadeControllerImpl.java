@@ -1,5 +1,6 @@
 package com.teoriadegrafos.uniritter.controllers;
 
+import com.teoriadegrafos.uniritter.entities.enums.StatusEnum;
 import com.teoriadegrafos.uniritter.services.impl.AtividadeServiceImpl;
 import com.teoriadegrafos.uniritter.services.impl.bos.AtividadeBO;
 import com.teoriadegrafos.uniritter.services.impl.bos.ProjetoBO;
@@ -79,11 +80,20 @@ public class AtividadeControllerImpl {
     }
 
     @PutMapping("/atividades/{idAtividade}")
-    public ResponseEntity<Void> atualizarStatusAtividade(@PathVariable Integer idAtividade) {
-        atividadeService.atualizarStatusAtividade(idAtividade);
-        logger.info("Atualizando status da atividade com ID: " + idAtividade);
+    public ResponseEntity<Void> atualizarStatusAtividade(
+            @PathVariable Integer idAtividade,
+            @RequestParam(name = "novoStatus") String novoStatus // Parâmetro para o novo status
+    ) {
+        // Converta o valor do novoStatus para um enum StatusEnum
+        StatusEnum statusEnum = StatusEnum.fromValor(novoStatus);
+
+        // Chame o serviço para atualizar o status da atividade
+        atividadeService.atualizarStatusAtividade(idAtividade, statusEnum);
+
+        logger.info("Atualizando status da atividade com ID: " + idAtividade + " para " + novoStatus);
         return ResponseEntity.ok().build();
     }
+
 
     @DeleteMapping("/atividades/{id}")
     public ResponseEntity<Void> deletarAtividade(@PathVariable Integer id) {
